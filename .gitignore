@@ -1,0 +1,47 @@
+# WebSecLab - Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# 数据库文件
+database/*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# Flask
+instance/
+.webassets-cache
+.env
+
+# 迁移文件(可选保留)
+# migrations/
+
+# 日志
+*.log
+
+# 测试与生成产物
+.pytest_cache/
+reports/
+
+# 向量数据库
+database/chroma_db/
+
+# WorkBuddy 项目内部数据（非源码）
+.workbuddy/
