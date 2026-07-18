@@ -142,42 +142,43 @@ def test_get_recent_activity_merged_and_sorted(app, db, test_user):
 
 
 def test_home_page_guest_shows_overview(client, db):
-    """未登录首页: 展示平台总览计数, 不暴露个人数据"""
+    """未登录首页: 欢迎横幅 + 系统状态 + 快捷操作, 不暴露个人模块"""
     resp = client.get('/')
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)
-    assert '注册用户' in text
-    assert '漏洞知识' in text
+    assert 'WebSecLab' in text
+    assert '系统运行状态' in text
+    assert '快捷操作' in text
     # 未登录不应有个人概览块
-    assert '欢迎回来' not in text
+    assert '核心指标' not in text
+    assert '管理员面板' not in text
 
 
 def test_home_page_logged_in_shows_personal(client, test_user):
-    """登录后首页: 展示统一工作台 (个人概览 + 明细 + 图表 + 最近活动)"""
+    """登录后首页: 渲染「安全实验态势中心」9 模块大屏"""
     _login(client, 'testuser', 'test123456')
     resp = client.get('/')
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)
-    assert '个人工作台' in text
-    assert '我的实验' in text
-    assert '最近活动' in text
-    # 合并后首页即原「用户中心」, 含明细与图表
-    assert '我的数据明细' in text
-    assert '实验状态分布' in text
+    for m in ['核心指标', 'AI 安全助手', '我的实验', '风险趋势',
+              '漏洞风险分布', '最近活动', '今日推荐']:
+        assert m in text
+    # 系统状态 + 快捷操作 仍常驻
+    assert '系统运行状态' in text and '快捷操作' in text
 
 
 def test_user_center_merged_into_home(client, test_user):
-    """/dashboard 已合并进首页: 重定向回首页, 登录态首页即统一工作台"""
+    """/dashboard 已合并进首页: 重定向回首页, 登录态首页即态势中心"""
     _login(client, 'testuser', 'test123456')
     # /dashboard 现在 302 重定向到首页, 不再独立渲染
     resp = client.get('/dashboard')
     assert resp.status_code == 302
     assert resp.headers['Location'] in ('/', './', '/?')
-    # 跟随重定向, 首页展示原「用户中心」全部内容
+    # 跟随重定向, 首页展示态势中心全部内容
     resp = client.get('/', follow_redirects=True)
     assert resp.status_code == 200
     text = resp.get_data(as_text=True)
-    assert '个人工作台' in text
+    assert '核心指标' in text
     assert '我的实验' in text
     assert '最近活动' in text
     assert '快捷操作' in text

@@ -13,6 +13,7 @@ from app.models.scan import ScanTask, ScanResult
 from app.models.ai_analysis import AIAnalysis
 from app.models.report import Report
 from app.models.risk import RiskAssessment
+from app.models.prompt_template import PromptTemplate
 
 
 # ==================== 告警阈值 (集中配置, 避免硬编码散落) ====================
@@ -401,6 +402,199 @@ class DashboardService:
             'failed_cnt': r.failed_cnt,
             'fail_rate': round(r.failed_cnt / r.total * 100, 1) if r.total else 0,
         } for r in rows]
+
+
+    # ==================== 首页安全实验态势中心 (UI v3) ====================
+
+    def get_home_dashboard(self, user_id):
+        """聚合首页「安全实验态势中心」全部模块数据 (登录态)
+
+        返回模块 ②~⑨ 所需数据; 模块①系统状态由 SystemStatusService 单独提供。
+        不修改任何数据库结构, 只读复用现有表。
+        """
+        return {
+            'core_metrics': self._get_home_core_metrics(user_id),
+            'my_experiments': self.get_my_experiments(user_id, limit=3),
+            'trends': self.get_home_trends(user_id=user_id, days=7),
+            'risk_distribution': self.get_home_risk_distribution(user_id),
+            'ai_copilot': self.get_ai_copilot_summary(user_id),
+            'activity': self.get_recent_activity(user_id, limit=8),
+            'recommendation': self.get_daily_recommendation(user_id),
+        }
+
+    def _get_home_core_metrics(self, user_id):
+        """模块③ 核心指标 (实验平台视角, 非企业SOC指标)"""
+        stats = self._get_user_stats(user_id)
+        risk = self._get_risk_stats(user_id=user_id)
+        # 综合风险评分等级
+        score = risk.get('avg_score', 0)
+        level = RiskAssessment.classify_risk(score) if hasattr(RiskAssessment, 'classify_risk') else 'Medium'
+        return {
+            'experiment_count': stats['experiment_count'],
+            'scan_count': stats['scan_count'],
+            'ai_count': stats['ai_count'],
+            'report_count': stats['report_count'],
+            'risk_score': score,
+            'risk_level': level,
+        }
+
+    def get_my_experiments(self, user_id, limit=3):
+        """模块⑤ 我的实验 — 最近 N 个实验, 进度由状态推导 (无 progress 字段)"""
+        exps = Experiment.query.filter_by(user_id=user_id).order_by(
+            Experiment.created_time.desc()
+        ).limit(limit).all()
+        out = []
+        for e in exps:
+            if e.status == 'created':
+                progress = 0
+            elif e.status == 'running':
+                progress = 50
+            elif e.status in ('success', 'closed', 'failed'):
+                progress = 100
+            else:
+                progress = 0
+            vuln = e.vulnerability
+            out.append({
+                'id': e.id,
+                'name': e.experiment_name or f'实验 #{e.id}',
+                'vuln_name': vuln.name if vuln else '通用漏洞',
+                'vuln_severity': vuln.severity if vuln else 'Medium',
+                'status': e.status,
+                'status_label': e.status_label,
+                'status_badge': e.status_badge,
+                'progress': progress,
+            })
+        return out
+
+    def get_home_trends(self, user_id=None, days=7):
+        """模块⑥ 风险趋势 — 最近 days 天: 扫描次数 / 漏洞数量 / 风险指数 三序列
+
+        漏洞数量映射为「每日完成的 AI 分析数」(每次 AI 分析对应一次漏洞发现)。
+        风险指数为当日 RiskAssessment.final_score 均值。
+        """
+        today = datetime.now().date()
+        dates = [(today - timedelta(days=days - 1 - i)).isoformat() for i in range(days)]
+
+        scan_q = db.session.query(
+            func.date(ScanTask.created_time), func.count(ScanTask.id))
+        ai_q = db.session.query(
+            func.date(AIAnalysis.created_time), func.count(AIAnalysis.id)
+        ).filter(AIAnalysis.status == 'completed')
+        risk_q = db.session.query(
+            func.date(RiskAssessment.created_time),
+            func.avg(RiskAssessment.final_score))
+        if user_id:
+            scan_q = scan_q.filter_by(user_id=user_id)
+            ai_q = ai_q.filter_by(user_id=user_id)
+            risk_q = risk_q.filter_by(user_id=user_id)
+
+        scan_map = {str(r[0]): r[1] for r in
+                    scan_q.group_by(func.date(ScanTask.created_time)).all()}
+        vuln_map = {str(r[0]): r[1] for r in
+                    ai_q.group_by(func.date(AIAnalysis.created_time)).all()}
+        risk_map = {str(r[0]): round(r[1] or 0, 1) for r in
+                    risk_q.group_by(func.date(RiskAssessment.created_time)).all()}
+
+        return {
+            'dates': dates,
+            'scan_counts': [scan_map.get(d, 0) for d in dates],
+            'vuln_counts': [vuln_map.get(d, 0) for d in dates],
+            'risk_scores': [risk_map.get(d) for d in dates],
+        }
+
+    def get_home_risk_distribution(self, user_id):
+        """模块⑦ 漏洞风险分布 — 复用现有 5 级风险分布 (含 Info)"""
+        return db_session_query_risk(user_id)
+
+    def get_ai_copilot_summary(self, user_id):
+        """模块④ AI 安全助手 — 今日分析数 / 发现高危漏洞数 / 建议 / 下一步"""
+        today_dt = datetime.combine(datetime.now().date(), datetime.min.time())
+        today_count = AIAnalysis.query.filter_by(user_id=user_id).filter(
+            AIAnalysis.created_time >= today_dt
+        ).count()
+        found = AIAnalysis.query.filter_by(
+            user_id=user_id, status='completed'
+        ).filter(
+            AIAnalysis.risk_level.in_(['Critical', 'High'])
+        ).count()
+        # 建议: 取最近一个未完成的实验
+        sugg = Experiment.query.filter_by(user_id=user_id).filter(
+            Experiment.status.in_(['created', 'running'])
+        ).order_by(Experiment.created_time.desc()).first()
+        if sugg:
+            suggestion = f'优先完成 {sugg.experiment_name or "当前"} 实验'
+            next_step = '进行漏洞扫描以验证防护效果'
+        else:
+            suggestion = '已完成全部实验，建议生成实验报告'
+            next_step = '查看风险趋势与漏洞分布'
+        return {
+            'today_count': today_count,
+            'found_vulns': found,
+            'suggestion': suggestion,
+            'next_step': next_step,
+        }
+
+    def get_daily_recommendation(self, user_id):
+        """模块⑨ 今日推荐 — 推荐一个用户尚未完成的漏洞实验
+
+        进度/难度按 severity 预设; OWASP 取自漏洞关联分类。
+        """
+        done_ids = {e.vulnerability_id for e in
+                    Experiment.query.filter_by(user_id=user_id).all()
+                    if e.vulnerability_id}
+        candidates = Vulnerability.query.all()
+        pick = next((v for v in candidates if v.id not in done_ids), None) or \
+            (candidates[0] if candidates else None)
+        if not pick:
+            return None
+        study_map = {'Critical': 25, 'High': 20, 'Medium': 15, 'Low': 10}
+        diff_map = {'Critical': 5, 'High': 4, 'Medium': 3, 'Low': 2}
+        owasp = pick.owasp.name if pick.owasp else 'OWASP Top 10'
+        return {
+            'vuln_id': pick.id,
+            'name': pick.name,
+            'severity': pick.severity,
+            'study_time': study_map.get(pick.severity, 15),
+            'difficulty': diff_map.get(pick.severity, 3),
+            'owasp': owasp,
+        }
+
+    def get_admin_home_summary(self):
+        """管理员首页折叠面板 — 系统概览 / 用户数 / 今日新增实验 / AI调用 / Prompt数 / 系统日志"""
+        today_dt = datetime.combine(datetime.now().date(), datetime.min.time())
+        user_count = User.query.count()
+        new_exp_today = Experiment.query.filter(
+            Experiment.created_time >= today_dt
+        ).count()
+        ai_calls = AIAnalysis.query.count()
+        prompt_count = PromptTemplate.query.count()
+
+        # 系统日志: 全平台最近活动 (扫描 + 实验, 取前 6)
+        events = []
+        for t in ScanTask.query.order_by(ScanTask.created_time.desc()).limit(5).all():
+            events.append({
+                'type': 'scan', 'title': f'扫描 {t.target}', 'time': t.created_time,
+                'status': t.status, 'status_label': t.status_label,
+                'status_badge': t.status_badge, 'link': f'/scan/{t.id}',
+            })
+        for e in Experiment.query.order_by(Experiment.created_time.desc()).limit(5).all():
+            events.append({
+                'type': 'experiment', 'title': e.experiment_name or f'实验 #{e.id}',
+                'time': e.created_time, 'status': e.status,
+                'status_label': e.status_label, 'status_badge': e.status_badge,
+                'link': f'/experiment/{e.id}',
+            })
+        events.sort(
+            key=lambda x: x['time'] or datetime.min.replace(tzinfo=None), reverse=True)
+        recent_logs = events[:6]
+
+        return {
+            'user_count': user_count,
+            'new_experiments_today': new_exp_today,
+            'ai_calls': ai_calls,
+            'prompt_count': prompt_count,
+            'recent_logs': recent_logs,
+        }
 
 
 def db_session_query_risk(user_id=None):

@@ -20,19 +20,22 @@ system_status_service = SystemStatusService()
 
 @main_bp.route('/')
 def index():
-    """首页 - 公开访问, 展示平台实时总览; 登录后展示个人概览"""
-    # 平台总览 (所有访客可见)
+    """首页 - 公开访问展示平台总览; 登录后展示「安全实验态势中心」9 模块大屏"""
+    # 平台总览 (所有访客可见) — 模块②核心指标(未登录态)
     overview = dashboard_service.get_platform_overview()
     # 系统状态: 仅用缓存占位渲染, 不触发实时探测 -> 首页瞬时返回;
     # 真实状态由前端 JS 异步调用 /api/system-status 补齐 (懒加载)
     system_status = system_status_service.get_status_safe()
-    # 登录用户附加个人概览
-    user_data = None
+    # 登录用户附加 9 模块聚合数据
+    home = None
+    admin_summary = None
     if current_user.is_authenticated:
-        user_data = dashboard_service.get_user_dashboard(current_user.id)
-        user_data['activity'] = dashboard_service.get_recent_activity(current_user.id, limit=6)
-    return render_template('index.html', overview=overview, user_data=user_data,
-                           system_status=system_status)
+        home = dashboard_service.get_home_dashboard(current_user.id)
+        if current_user.is_admin():
+            admin_summary = dashboard_service.get_admin_home_summary()
+    return render_template('dashboard/home.html', overview=overview,
+                           system_status=system_status, home=home,
+                           admin_summary=admin_summary)
 
 
 @main_bp.route('/api/system-status')
@@ -42,6 +45,59 @@ def system_status_api():
     返回: [{'key','name','status','detail'}, ...]  (实时探测, 带 TTL 缓存)
     """
     return jsonify(system_status_service.get_status())
+
+
+# ==================== 首页「安全实验态势中心」JSON 接口 (登录态) ====================
+# 前端 dashboard.js 通过 Fetch 拉取, 实现 AJAX 局部刷新; 不触发整页刷新。
+
+@main_bp.route('/api/dashboard/my-experiments')
+@login_required
+def api_dash_my_experiments():
+    """模块⑤ 我的实验"""
+    return jsonify(dashboard_service.get_my_experiments(current_user.id, limit=3))
+
+
+@main_bp.route('/api/dashboard/trends')
+@login_required
+def api_dash_trends():
+    """模块⑥ 风险趋势 (扫描次数/漏洞数量/风险指数 三序列)"""
+    return jsonify(dashboard_service.get_home_trends(user_id=current_user.id, days=7))
+
+
+@main_bp.route('/api/dashboard/risk-distribution')
+@login_required
+def api_dash_risk_dist():
+    """模块⑦ 漏洞风险分布"""
+    return jsonify(dashboard_service.get_home_risk_distribution(current_user.id))
+
+
+@main_bp.route('/api/dashboard/copilot')
+@login_required
+def api_dash_copilot():
+    """模块④ AI 安全助手摘要"""
+    return jsonify(dashboard_service.get_ai_copilot_summary(current_user.id))
+
+
+@main_bp.route('/api/dashboard/activity')
+@login_required
+def api_dash_activity():
+    """模块⑧ 最近活动"""
+    return jsonify(dashboard_service.get_recent_activity(current_user.id, limit=8))
+
+
+@main_bp.route('/api/dashboard/recommendation')
+@login_required
+def api_dash_reco():
+    """模块⑨ 今日推荐"""
+    return jsonify(dashboard_service.get_daily_recommendation(current_user.id) or {})
+
+
+@main_bp.route('/api/dashboard/admin-summary')
+@login_required
+@admin_required
+def api_dash_admin():
+    """管理员首页折叠面板摘要"""
+    return jsonify(dashboard_service.get_admin_home_summary())
 
 
 @main_bp.route('/dashboard')

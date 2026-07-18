@@ -114,7 +114,7 @@ def test_index_page_renders_status_card(client):
     resp = client.get('/')
     assert resp.status_code == 200
     body = resp.get_data(as_text=True)
-    assert '系统状态' in body
+    assert '系统运行状态' in body
     for name in EXPECTED_NAMES.values():
         assert name in body
     # 缓存已清空 (autouse fixture), 首页应渲染占位 '探测中…', 而非实时探测结果

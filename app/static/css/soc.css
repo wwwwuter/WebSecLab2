@@ -1,23 +1,29 @@
 /* ============================================================
-   WebSecLab v3.0 — SOC 浅色主题 (static/css/soc.css)
+   WebSecLab v3.0 — 深色栏 + 浅色内容主题 (static/css/soc.css)
    配合 <html data-bs-theme="light"> 使用
-   设计参考: Splunk Security / Elastic Security 浅色风
-   布局（左侧固定导航 + 顶部栏）保持不变，仅改配色为白色/浅色
+   设计: 侧边栏 #1F2937 / 顶部栏 #111827 (深色栏)
+         内容区 #F5F7FA / 卡片 #fff (浅色内容)
+   布局（左侧固定导航 + 顶部栏）保持不变，仅改配色
    ============================================================ */
 
 :root {
-  --soc-bg: #f4f6fa;
-  --soc-sidebar: #ffffff;
-  --soc-topbar: #ffffff;
+  --soc-bg: #f5f7fa;            /* 内容区背景 */
+  --soc-sidebar: #1f2937;       /* 侧边栏 (深) */
+  --soc-sidebar-2: #111827;     /* 侧边栏更深 */
+  --soc-topbar: #111827;        /* 顶部栏 (深) */
+  --soc-topbar-text: #e5e7eb;
+  --soc-topbar-muted: #9ca3af;
+  --soc-sidebar-text: #cbd5e1;
+  --soc-sidebar-muted: #94a3b8;
   --soc-card: #ffffff;
   --soc-border: #e6e9f0;
   --soc-text: #1f2937;
   --soc-muted: #6b7280;
-  --soc-accent: #3b82f6;     /* 蓝 */
-  --soc-accent-2: #0891b2;   /* 青 (略深以保证浅底可读性) */
-  --soc-success: #16a34a;    /* 绿 */
-  --soc-danger: #dc2626;     /* 红风险色 */
-  --soc-warning: #d97706;    /* 橙/黄 */
+  --soc-accent: #3b82f6;        /* 蓝 */
+  --soc-accent-2: #06b6d4;      /* 青 */
+  --soc-success: #16a34a;
+  --soc-danger: #dc2626;
+  --soc-warning: #d97706;
   --soc-sidebar-w: 248px;
 }
 
@@ -30,12 +36,11 @@ html[data-bs-theme="light"] body {
 /* ---------- 整体布局 ---------- */
 .soc-shell { display: flex; min-height: 100vh; }
 
-/* ---------- 左侧导航 ---------- */
+/* ---------- 左侧导航 (深色) ---------- */
 .soc-sidebar {
   width: var(--soc-sidebar-w);
   flex: 0 0 var(--soc-sidebar-w);
-  background: var(--soc-sidebar);
-  border-right: 1px solid var(--soc-border);
+  background: linear-gradient(180deg, var(--soc-sidebar) 0%, var(--soc-sidebar-2) 100%);
   position: fixed;
   top: 0; bottom: 0; left: 0;
   display: flex;
@@ -46,8 +51,8 @@ html[data-bs-theme="light"] body {
 .soc-sidebar .brand {
   display: flex; align-items: center; gap: .6rem;
   padding: 0 1.1rem; height: 64px;
-  border-bottom: 1px solid var(--soc-border);
-  color: var(--soc-text); text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  color: #f8fafc; text-decoration: none;
   flex: 0 0 64px;
 }
 .soc-sidebar .brand .logo {
@@ -57,29 +62,29 @@ html[data-bs-theme="light"] body {
   color: #fff; font-size: 1.1rem;
 }
 .soc-sidebar .brand .title { font-weight: 700; font-size: 1.05rem; line-height: 1.1; }
-.soc-sidebar .brand .sub { font-size: .68rem; color: var(--soc-muted); }
+.soc-sidebar .brand .sub { font-size: .68rem; color: var(--soc-sidebar-muted); }
 
 .soc-nav { padding: .6rem .6rem; flex: 1; }
 .soc-nav .nav-link {
   display: flex; align-items: center; gap: .7rem;
-  color: var(--soc-muted); border-radius: 8px;
+  color: var(--soc-sidebar-muted); border-radius: 8px;
   padding: .56rem .8rem; margin-bottom: .15rem;
   font-size: .92rem; border-left: 3px solid transparent;
   text-decoration: none;
 }
 .soc-nav .nav-link i { font-size: 1.05rem; }
-.soc-nav .nav-link:hover { background: #f1f5f9; color: var(--soc-text); }
+.soc-nav .nav-link:hover { background: rgba(255,255,255,.07); color: #f1f5f9; }
 .soc-nav .nav-link.active {
-  background: rgba(59,130,246,.12); color: var(--soc-accent);
+  background: rgba(59,130,246,.18); color: #fff;
   border-left-color: var(--soc-accent); font-weight: 600;
 }
-.soc-nav .nav-link.admin { color: #dc2626; }
-.soc-nav .nav-link.admin:hover { background: rgba(220,38,38,.08); color: #b91c1c; }
-.soc-nav .nav-link.admin.active { background: rgba(220,38,38,.12); border-left-color: #dc2626; color: #b91c1c; }
+.soc-nav .nav-link.admin { color: #fca5a5; }
+.soc-nav .nav-link.admin:hover { background: rgba(220,38,38,.14); color: #fecaca; }
+.soc-nav .nav-link.admin.active { background: rgba(220,38,38,.2); border-left-color: #ef4444; color: #fff; }
 
 .soc-sidebar .sidebar-footer {
-  padding: .8rem 1rem; border-top: 1px solid var(--soc-border);
-  font-size: .72rem; color: var(--soc-muted);
+  padding: .8rem 1rem; border-top: 1px solid rgba(255,255,255,.08);
+  font-size: .72rem; color: var(--soc-sidebar-muted);
 }
 
 /* ---------- 主区域 ---------- */
@@ -89,26 +94,27 @@ html[data-bs-theme="light"] body {
 }
 .soc-topbar {
   position: sticky; top: 0; height: 60px; z-index: 1030;
-  background: var(--soc-topbar); border-bottom: 1px solid var(--soc-border);
+  background: var(--soc-topbar);
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 1.25rem;
 }
-.soc-topbar .page-title { font-weight: 600; font-size: 1rem; color: var(--soc-text); }
-.soc-topbar .topbar-user { display: flex; align-items: center; gap: .6rem; color: var(--soc-muted); font-size: .9rem; }
+.soc-topbar .page-title { font-weight: 600; font-size: 1rem; color: var(--soc-topbar-text); }
+.soc-topbar .topbar-user { display: flex; align-items: center; gap: .6rem; color: var(--soc-topbar-muted); font-size: .9rem; }
+.soc-topbar .topbar-user span.username { color: var(--soc-topbar-text); }
 .soc-topbar .hamburger {
-  display: none; background: none; border: 0; color: var(--soc-text);
+  display: none; background: none; border: 0; color: var(--soc-topbar-text);
   font-size: 1.35rem; padding: .2rem .4rem; border-radius: 6px;
 }
-.soc-topbar .hamburger:hover { background: #f1f5f9; }
+.soc-topbar .hamburger:hover { background: rgba(255,255,255,.08); }
 
 .soc-content { flex: 1; padding: 1.5rem; width: 100%; }
 .soc-footer {
   padding: .9rem 1.25rem; border-top: 1px solid var(--soc-border);
   color: var(--soc-muted); font-size: .8rem; text-align: center;
-  background: var(--soc-topbar);
+  background: #eef1f6;
 }
 
-/* ---------- 卡片 / 表单 (浅色覆盖) ---------- */
+/* ---------- 卡片 / 表单 (浅色内容覆盖) ---------- */
 html[data-bs-theme="light"] .card {
   background: var(--soc-card); border-color: var(--soc-border); color: var(--soc-text);
   box-shadow: 0 1px 2px rgba(15,23,42,.04);
@@ -180,7 +186,7 @@ html[data-bs-theme="light"] .btn-close { filter: none; }
 
 /* ---------- 滚动条 ---------- */
 .soc-sidebar::-webkit-scrollbar { width: 6px; }
-.soc-sidebar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.soc-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 3px; }
 .soc-sidebar::-webkit-scrollbar-track { background: transparent; }
 .soc-content::-webkit-scrollbar { width: 8px; }
 .soc-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -189,11 +195,11 @@ html[data-bs-theme="light"] .btn-close { filter: none; }
 .soc-backdrop { display: none; }
 @media (max-width: 991.98px) {
   .soc-sidebar { transform: translateX(-100%); transition: transform .2s ease; }
-  .soc-sidebar.show { transform: translateX(0); box-shadow: 4px 0 24px rgba(15,23,42,.15); }
+  .soc-sidebar.show { transform: translateX(0); box-shadow: 4px 0 24px rgba(15,23,42,.35); }
   .soc-main { margin-left: 0; }
   .soc-topbar .hamburger { display: inline-flex; }
   .soc-backdrop.show {
     display: block; position: fixed; inset: 0; z-index: 1035;
-    background: rgba(15,23,42,.4);
+    background: rgba(15,23,42,.5);
   }
 }
