@@ -45,3 +45,6 @@ database/chroma_db/
 
 # WorkBuddy 项目内部数据（非源码）
 .workbuddy/
+
+# 用户上传头像（运行时生成，非源码）
+app/static/uploads/

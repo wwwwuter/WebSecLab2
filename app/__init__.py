@@ -45,6 +45,7 @@ def create_app(config_name=None):
     from app.routes.risk import risk_bp
     from app.routes.mcp import mcp_bp
     from app.routes.knowledge_graph import kg_bp
+    from app.routes.profile import profile_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(vuln_bp)
@@ -56,6 +57,7 @@ def create_app(config_name=None):
     app.register_blueprint(risk_bp)
     app.register_blueprint(mcp_bp)
     app.register_blueprint(kg_bp)
+    app.register_blueprint(profile_bp)
 
     # 注册自定义 Jinja 过滤器 (轻量文本渲染: 换行 + 行内/围栏代码块)
     _register_filters(app)
@@ -81,6 +83,9 @@ def create_app(config_name=None):
 
         # AI分析表补 scene 列 (历史库可能缺此列)
         _ensure_ai_analysis_schema()
+
+        # 用户表补 nickname 列 (个人中心展示名, 历史库可能缺此列)
+        _ensure_user_schema()
 
     # 注册错误处理
     register_error_handlers(app)
@@ -262,6 +267,36 @@ def _ensure_ai_analysis_schema():
                     raise
     except Exception as e:
         log.error('[migration] ai_analyses 表结构同步失败: %s', e, exc_info=True)
+
+
+def _ensure_user_schema():
+    """同步 users 表结构到最新模型 (create_all 不会给已存在的表加列)。
+
+    仅补 nickname 一列; 其他列由 create_all 在建表时保证。
+    全程使用原始 SQL, 避免 ORM mapper 在列尚未就绪时报错。
+    """
+    from sqlalchemy import text
+    import logging
+    log = logging.getLogger(__name__)
+
+    try:
+        db_cols = [r[0] for r in db.session.execute(
+            text('PRAGMA table_info(users)')
+        ).fetchall()]
+
+        if 'nickname' not in db_cols:
+            try:
+                db.session.execute(
+                    text('ALTER TABLE users ADD COLUMN nickname VARCHAR(64)')
+                )
+                db.session.commit()
+                db.engine.dispose()
+                log.info('[migration] 已添加 users.nickname')
+            except Exception as e:
+                if 'duplicate' not in str(e).lower():
+                    raise
+    except Exception as e:
+        log.error('[migration] users 表结构同步失败: %s', e, exc_info=True)
 
 
 def register_error_handlers(app):

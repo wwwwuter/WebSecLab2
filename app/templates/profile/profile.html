@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block page_title %}个人中心{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+
+    <!-- 模块一：基本资料（左头像 / 右资料） -->
+    <div class="card profile-card">
+        <div class="row g-0">
+            <div class="col-md-3 profile-avatar-col">
+                <div class="profile-avatar">
+                    {% if avatar_url %}
+                        <img src="{{ avatar_url }}" alt="头像">
+                    {% else %}
+                        <span>{{ (user.nickname or user.username)[0]|upper }}</span>
+                    {% endif %}
+                </div>
+                <a href="{{ url_for('profile.edit') }}" class="btn btn-outline-primary btn-sm mt-3 w-100">
+                    <i class="bi bi-pencil"></i> 修改资料
+                </a>
+            </div>
+            <div class="col-md-9 profile-info-col">
+                <h4 class="profile-username">
+                    {{ user.nickname or user.username }}
+                    {% if user.nickname %}<small class="text-muted">@{{ user.username }}</small>{% endif %}
+                </h4>
+                <div class="profile-meta-grid">
+                    <div><span class="label">用户ID</span><span class="value">{{ user.id }}</span></div>
+                    <div><span class="label">角色</span>
+                        <span class="value">{% if user.is_admin() %}管理员{% else %}普通用户{% endif %}</span>
+                    </div>
+                    <div><span class="label">邮箱</span><span class="value">{{ user.email or '未设置' }}</span></div>
+                    <div><span class="label">注册时间</span>
+                        <span class="value">{{ user.created_time.strftime('%Y-%m-%d') if user.created_time else '-' }}</span>
+                    </div>
+                    <div><span class="label">最近登录</span>
+                        <span class="value">{{ last_login.strftime('%Y-%m-%d %H:%M') if last_login else '-' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- 模块二：账号管理 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">账号管理</div>
+                <div class="card-body d-grid gap-2">
+                    <a href="{{ url_for('profile.edit') }}" class="btn btn-primary">
+                        <i class="bi bi-sliders"></i> 修改资料
+                    </a>
+                    {% if user.is_admin() %}
+                    <a href="{{ url_for('main.admin_panel') }}" class="btn btn-dark">
+                        <i class="bi bi-gear-fill"></i> 进入管理中心
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 模块三：我的数据 -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">我的数据</div>
+                <div class="card-body">
+                    <div class="data-grid">
+                        <a class="data-card" href="{{ url_for('exp.exp_list') }}">
+                            <div class="num">{{ stats.experiment_count }}</div>
+                            <div class="lbl">实验</div>
+                        </a>
+                        <a class="data-card" href="{{ url_for('scan.scan_list') }}">
+                            <div class="num">{{ stats.scan_count }}</div>
+                            <div class="lbl">扫描</div>
+                        </a>
+                        <a class="data-card" href="{{ url_for('ai.ai_history') }}">
+                            <div class="num">{{ stats.ai_count }}</div>
+                            <div class="lbl">AI分析</div>
+                        </a>
+                        <a class="data-card" href="{{ url_for('report.report_list') }}">
+                            <div class="num">{{ stats.report_count }}</div>
+                            <div class="lbl">报告</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模块四：最近登录 -->
+    <div class="card mb-4">
+        <div class="card-header">最近登录</div>
+        <div class="card-body">
+            {% if history %}
+            <ul class="login-list">
+                {% for h in history %}
+                <li>
+                    <span class="login-time"><i class="bi bi-clock"></i> {{ h.login_time.strftime('%Y-%m-%d %H:%M') if h.login_time else '' }}</span>
+                    <span class="login-ip"><i class="bi bi-geo-alt"></i> {{ h.ip_address or '-' }}</span>
+                    <span class="login-browser"><i class="bi bi-globe"></i> {{ h.browser or '未知' }}</span>
+                    <span class="login-os"><i class="bi bi-cpu"></i> {{ h.os or '未知' }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted mb-0">暂无登录记录</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

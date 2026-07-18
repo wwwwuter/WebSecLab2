@@ -7,6 +7,8 @@ import logging
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from app.services.auth_service import AuthService
+from app.models.login_log import LoginLog
+from app.extensions import db
 
 logger = logging.getLogger(__name__)
 auth_bp = Blueprint('auth', __name__)
@@ -77,6 +79,22 @@ def login():
         if user:
             login_user(user)
             logger.info('用户登录成功: username=%s, ip=%s', username, request.remote_addr)
+            # 记录登录历史 (失败静默, 不影响登录主流程)
+            try:
+                ua = request.user_agent
+                ip = request.headers.get('X-Forwarded-For', request.remote_addr) or request.remote_addr
+                if ',' in ip:
+                    ip = ip.split(',')[0].strip()
+                db.session.add(LoginLog(
+                    user_id=user.id,
+                    ip_address=ip,
+                    user_agent=(ua.string or '')[:256] if ua and ua.string else None,
+                    browser=ua.browser if ua else None,
+                    os=ua.platform if ua else None,
+                ))
+                db.session.commit()
+            except Exception as e:
+                logger.warning('登录记录写入失败(已忽略): %s', e)
             flash(f'欢迎回来, {user.username}!', 'success')
             # 跳转到登录前访问的页面或首页
             next_page = request.args.get('next')

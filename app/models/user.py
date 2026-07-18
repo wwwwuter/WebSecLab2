@@ -28,8 +28,15 @@ class User(UserMixin, db.Model):
     # 邮箱，唯一
     email = db.Column(db.String(128), unique=True, nullable=True)
 
+    # 昵称（可选，默认与用户名相同；用于个人中心展示）
+    nickname = db.Column(db.String(64), nullable=True)
+
     # 创建时间
     created_time = db.Column(db.DateTime, default=datetime.now)
+
+    def display_name(self):
+        """展示名：优先昵称，否则用户名"""
+        return self.nickname or self.username
 
     def set_password(self, password):
         """对明文密码进行Hash加密并保存"""

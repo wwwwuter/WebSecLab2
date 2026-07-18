@@ -1,6 +1,7 @@
 """Models包初始化 - 导入所有模型以便Flask-Migrate发现"""
 
 from app.models.user import User
+from app.models.login_log import LoginLog
 from app.models.vulnerability import VulnerabilityCategory, OWASPCategory, Vulnerability
 from app.models.experiment import Experiment, ExperimentLog
 from app.models.scan import ScanTask, ScanResult
