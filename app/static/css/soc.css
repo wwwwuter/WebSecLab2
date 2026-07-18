@@ -125,7 +125,7 @@ html[data-bs-theme="light"] .card-header {
 html[data-bs-theme="light"] .table { color: var(--soc-text); }
 html[data-bs-theme="light"] .table thead th { border-color: var(--soc-border); color: var(--soc-muted); }
 html[data-bs-theme="light"] .table td, html[data-bs-theme="light"] .table th { border-color: var(--soc-border); }
-html[data-bs-theme="light"] a { color: var(--soc-accent); }
+html[data-bs-theme="light"] a:not(.btn):not(.nav-link):not(.dropdown-item):not(.page-link):not(.breadcrumb-item):not(.quick-btn):not(.admin-toggle) { color: var(--soc-accent); }
 html[data-bs-theme="light"] a.text-reset, html[data-bs-theme="light"] a.link-secondary { color: var(--soc-muted) !important; }
 html[data-bs-theme="light"] .text-muted { color: var(--soc-muted) !important; }
 html[data-bs-theme="light"] .form-control, html[data-bs-theme="light"] .form-select {
@@ -149,6 +149,20 @@ html[data-bs-theme="light"] .alert { color: var(--soc-text); }
 html[data-bs-theme="light"] .breadcrumb-item, html[data-bs-theme="light"] .breadcrumb-item a { color: var(--soc-muted); }
 html[data-bs-theme="light"] hr { border-color: var(--soc-border); }
 html[data-bs-theme="light"] .btn-close { filter: none; }
+
+/* ---------- 按钮文字色修复 (确保彩色底按钮白字) ---------- */
+html[data-bs-theme="light"] .btn-primary,
+html[data-bs-theme="light"] .btn-success,
+html[data-bs-theme="light"] .btn-danger,
+html[data-bs-theme="light"] .btn-warning,
+html[data-bs-theme="light"] .btn-info,
+html[data-bs-theme="light"] .btn-dark {
+  color: #fff !important;
+}
+html[data-bs-theme="light"] .btn-outline-primary { color: var(--soc-accent) !important; border-color: var(--soc-accent); }
+html[data-bs-theme="light"] .btn-outline-success { color: var(--soc-success) !important; border-color: var(--soc-success); }
+html[data-bs-theme="light"] .btn-outline-danger { color: var(--soc-danger) !important; border-color: var(--soc-danger); }
+html[data-bs-theme="light"] .btn-outline-secondary { color: var(--soc-muted) !important; border-color: var(--soc-border); }
 
 /* 强调色工具类 */
 .soc-text-accent { color: var(--soc-accent); }
