@@ -175,8 +175,8 @@
                              style="width:{{ e.progress }}%"></div>
                     </div>
                     <div class="exp-actions">
-                        <a href="{{ url_for('exp.exp_detail', id=e.id) }}" class="btn btn-sm btn-outline-primary">继续实验</a>
-                        <a href="{{ url_for('exp.exp_detail', id=e.id) }}" class="btn btn-sm btn-link text-decoration-none">查看详情</a>
+                        <a href="{{ url_for('exp.exp_detail', experiment_id=e.id) }}" class="btn btn-sm btn-outline-primary">继续实验</a>
+                        <a href="{{ url_for('exp.exp_detail', experiment_id=e.id) }}" class="btn btn-sm btn-link text-decoration-none">查看详情</a>
                     </div>
                 </div>
                 {% endfor %}
