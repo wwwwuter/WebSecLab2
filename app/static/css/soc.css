@@ -150,7 +150,12 @@ html[data-bs-theme="light"] .breadcrumb-item, html[data-bs-theme="light"] .bread
 html[data-bs-theme="light"] hr { border-color: var(--soc-border); }
 html[data-bs-theme="light"] .btn-close { filter: none; }
 
-/* ---------- 按钮文字色修复 (确保彩色底按钮白字) ---------- */
+/* ==========================================================
+   按钮与标签文字色 — 核心原则：彩色背景上文字必须是白色或深色
+   覆盖所有场景: 实心按钮 / 描边按钮(含激活态) / 徽章 / 自定义标签
+   ========================================================== */
+
+/* 1) 实心按钮 → 白字 (覆盖全局 a{} 继承的蓝色) */
 html[data-bs-theme="light"] .btn-primary,
 html[data-bs-theme="light"] .btn-success,
 html[data-bs-theme="light"] .btn-danger,
@@ -159,10 +164,59 @@ html[data-bs-theme="light"] .btn-info,
 html[data-bs-theme="light"] .btn-dark {
   color: #fff !important;
 }
-html[data-bs-theme="light"] .btn-outline-primary { color: var(--soc-accent) !important; border-color: var(--soc-accent); }
-html[data-bs-theme="light"] .btn-outline-success { color: var(--soc-success) !important; border-color: var(--soc-success); }
-html[data-bs-theme="light"] .btn-outline-danger { color: var(--soc-danger) !important; border-color: var(--soc-danger); }
-html[data-bs-theme="light"] .btn-outline-secondary { color: var(--soc-muted) !important; border-color: var(--soc-border); }
+
+/* 2) 描边按钮 — 正常态保留 Bootstrap 原始配色, 不加 !important */
+/*    激活态(.active/.checked)Bootstrap 会自动变实心底+白字, 不干预 */
+/*    (删除之前的 !important 强制色, 它会破坏激活态白字) */
+
+/* 3) 按钮组 checkbox 激活态保险补丁 — 确保选中后实心底=白字 */
+html[data-bs-theme="light"] .btn-check:checked + .btn-outline-primary,
+html[data-bs-theme="light"] .btn-check:checked + .btn-outline-success,
+html[data-bs-theme="light"] .btn-check:checked + .btn-outline-danger,
+html[data-bs-theme="light"] .btn-check:checked + .btn-outline-warning,
+html[data-bs-theme="light"] .btn-check:checked + .btn-outline-info,
+html[data-bs-theme="light"] .btn-check:checked + .btn-outline-dark,
+html[data-bs-theme="light"] .btn.active.btn-outline-primary,
+html[data-bs-theme="light"] .btn.active.btn-outline-success,
+html[data-bs-theme="light"] .btn.active.btn-outline-danger,
+html[data-bs-theme="light"] .btn.active.btn-outline-warning,
+html[data-bs-theme="light"] .btn.active.btn-outline-info {
+  color: #fff !important;
+}
+
+/* 4) Badge 徽章 — 彩底白字 */
+html[data-bs-theme="light"] .badge.bg-primary,
+html[data-bs-theme="light"] .badge.bg-success,
+html[data-bs-theme="light"] .badge.bg-danger,
+html[data-bs-theme="light"] .badge.bg-warning,
+html[data-bs-theme="light"] .badge.bg-info,
+html[data-bs-theme="light"] .badge.bg-dark,
+html[data-bs-theme="light"] .badge.bg-secondary {
+  color: #fff !important;
+}
+
+/* 5) 自定义内联彩色背景的元素 — 白字兜底 (如 dashboard 的 sev/qi/tag 等) */
+html[data-bs-theme="light"] [style*="background:#dc2626"],
+html[data-bs-theme="light"] [style*="background:#ef4444"],
+html[data-bs-theme="light"] [style*="background:rgb(220,38,38)"],
+html[data-bs-theme="light"] [style*="background:rgba(220,38,38"],
+html[data-bs-theme="light"] [style*="background:#16a34a"],
+html[data-bs-theme="light"] [style*="background:#22c55e"],
+html[data-bs-theme="light"] [style*="background:rgba(22,163,74"],
+html[data-bs-theme="light"] [style*="background:#3b82f6"],
+html[data-bs-theme="light"] [style*="background:rgba(59,130,246"],
+html[data-bs-theme="light"] [style*="background:#f97316"],
+html[data-bs-theme="light"] [style*="background:#fd7e14"],
+html[data-bs-theme="light"] [style*="background:#eab308"],
+html[data-bs-theme="light"] [style*="background:#d97706"],
+html[data-bs-theme="light"] [style*="background:#06b6d4"],
+html[data-bs-theme="light"] [style*="background:rgba(6,182,212"],
+html[data-bs-theme="light"] [style*="background:#a855f7"],
+html[data-bs-theme="light"] [style*="background:rgba(168,85,247"],
+html[data-bs-theme="light"] [style*="background:#6f42c1"],
+html[data-bs-theme="light"] .sev { /* dashboard severity badge */
+  color: #fff !important;
+}
 
 /* 强调色工具类 */
 .soc-text-accent { color: var(--soc-accent); }
