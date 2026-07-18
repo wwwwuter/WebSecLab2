@@ -95,6 +95,20 @@
 /* ---------- 模块⑤ 我的实验 ---------- */
 .exp-row { padding: .8rem 0; border-bottom: 1px solid var(--soc-border); }
 .exp-row:last-child { border-bottom: 0; }
+
+/* 整行可点击 */
+.exp-row-clickable {
+  display: block; text-decoration: none; color: inherit;
+  cursor: pointer; transition: background-color .15s ease, transform .15s ease;
+  border-bottom: 1px solid var(--soc-border);
+  border-radius: 8px; padding: .8rem .6rem;
+  margin-bottom: -1px;
+}
+.exp-row-clickable:last-child { border-bottom: 0; margin-bottom: 0; }
+.exp-row-clickable:hover {
+  background-color: #f8fafc; transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(15,23,42,.06);
+}
 .exp-row-head { display: flex; justify-content: space-between; align-items: center; }
 .exp-name { font-weight: 600; font-size: .92rem; }
 .exp-meta { font-size: .8rem; color: var(--soc-muted); margin: .25rem 0 .45rem; }
